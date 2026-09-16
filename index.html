@@ -154,6 +154,17 @@
       color: #e5e7eb;
     }
 
+    /* Dynamic Gain Styling Classes */
+    .gain-positive {
+      color: var(--accent-green) !important;
+      font-weight: bold;
+    }
+
+    .gain-negative {
+      color: var(--accent-red) !important;
+      font-weight: bold;
+    }
+
     /* Text Wrapping Rules for Reksa Dana & Learning Tables */
     #reksa-table,
     #learning-table {
@@ -348,7 +359,7 @@
         </div>
       </div>
 
-      <!-- 3. PAPER TRADING / STILL LEARNING (With Text Wrapping) -->
+      <!-- 3. PAPER TRADING / STILL LEARNING -->
       <div class="card">
         <div class="card-title">Paper Trading / Still Learning</div>
         <div class="table-container">
@@ -368,7 +379,7 @@
 
     <!-- Right Column -->
     <div class="column">
-      <!-- REKSA DANA (With Text Wrapping) -->
+      <!-- REKSA DANA -->
       <div class="card">
         <div class="card-title">Reksa Dana</div>
         <div class="table-container">
@@ -433,8 +444,11 @@
 
   <script>
     const PASSWORD_REQUIRED = "9E25Pnbr";
-    const JSONBIN_BIN_ID = "66cc1000e41b4d34e4256789"; 
-    const CLOUD_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+    
+    // Keyless Public Cloud KV Storage API (kvdb.io)
+    // You can replace 'invest_terminal_db_v1' with any custom unique bucket ID
+    const CLOUD_STORAGE_KEY = "invest_terminal_db_v1";
+    const CLOUD_URL = `https://kvdb.io/8xZ7W9uK34Lp2Q1v/${CLOUD_STORAGE_KEY}`;
 
     let isAuthenticated = false;
 
@@ -450,13 +464,26 @@
 
     let store = JSON.parse(localStorage.getItem('investRecordData')) || defaultData;
 
+    // Helper: Formats Gain / Profit Text Color (Green for > 0.01%, Red for negative)
+    function formatGainCell(value) {
+      if (!value) return '';
+      const cleanNum = parseFloat(value.toString().replace(/[^0-9.-]/g, ''));
+      if (isNaN(cleanNum)) return value;
+      
+      if (cleanNum >= 0.01) {
+        return `<span class="gain-positive">${value}</span>`;
+      } else if (cleanNum < 0) {
+        return `<span class="gain-negative">${value}</span>`;
+      }
+      return value;
+    }
+
+    // Cloud Data Sync (Fetches real data saved across devices)
     async function initCloudSync() {
       const statusEl = document.getElementById('syncStatus');
       statusEl.innerText = "SYNCING...";
       try {
-        const res = await fetch(CLOUD_URL + '/latest', {
-          headers: { 'X-Bin-Meta': 'false' }
-        });
+        const res = await fetch(CLOUD_URL);
         if (res.ok) {
           const cloudStore = await res.json();
           if (cloudStore && typeof cloudStore === 'object') {
@@ -464,6 +491,8 @@
             localStorage.setItem('investRecordData', JSON.stringify(store));
             statusEl.innerText = "CLOUD SYNCED";
           }
+        } else {
+          statusEl.innerText = "LOCAL MODE";
         }
       } catch (err) {
         statusEl.innerText = "LOCAL MODE";
@@ -476,12 +505,16 @@
       statusEl.innerText = "SAVING...";
       localStorage.setItem('investRecordData', JSON.stringify(store));
       try {
-        await fetch(CLOUD_URL, {
-          method: 'PUT',
+        const res = await fetch(CLOUD_URL, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(store)
         });
-        statusEl.innerText = "CLOUD SYNCED";
+        if (res.ok) {
+          statusEl.innerText = "CLOUD SYNCED";
+        } else {
+          statusEl.innerText = "SAVED LOCALLY";
+        }
       } catch (err) {
         statusEl.innerText = "SAVED LOCALLY";
       }
@@ -499,14 +532,14 @@
           <td title="${item.price || ''}">${item.price || ''}</td>
           <td title="${item.action || ''}">${item.action || ''}</td>
           <td title="${item.lot || ''}">${item.lot || ''}</td>
-          <td title="${item.gain || ''}">${item.gain || ''}</td>
+          <td>${formatGainCell(item.gain)}</td>
           <td title="${item.broker || ''}">${item.broker || ''}</td>
           <td title="${item.date || ''}">${item.date || ''}</td>
           ${isAuthenticated ? `<td><button class="btn-delete" onclick="deleteEntry('saham', ${i})">✕</button></td>` : ''}
         </tr>
       `).join('') || `<tr><td colspan="${isAuthenticated ? 9 : 8}" style="text-align:center; color:#555;">No records</td></tr>`;
 
-      // Reksa Dana (With Text Wrapping)
+      // Reksa Dana
       document.getElementById('reksa-body').innerHTML = store.reksa.map((item, i) => `
         <tr>
           <td>${i + 1}</td>
@@ -522,14 +555,14 @@
         <tr>
           <td>${i + 1}</td>
           <td title="${item.emiten || ''}">${item.emiten || ''}</td>
-          <td title="${item.profit || ''}">${item.profit || ''}</td>
-          <td title="${item.gain || ''}">${item.gain || ''}</td>
+          <td>${formatGainCell(item.profit)}</td>
+          <td>${formatGainCell(item.gain)}</td>
           <td title="${item.date || ''}">${item.date || ''}</td>
           ${isAuthenticated ? `<td><button class="btn-delete" onclick="deleteEntry('foreign', ${i})">✕</button></td>` : ''}
         </tr>
       `).join('') || `<tr><td colspan="${isAuthenticated ? 6 : 5}" style="text-align:center; color:#555;">No records</td></tr>`;
 
-      // Learning (With Text Wrapping)
+      // Learning
       document.getElementById('learning-body').innerHTML = store.learning.map((item, i) => `
         <tr>
           <td>${i + 1}</td>
@@ -600,7 +633,7 @@
           <div class="form-group"><label>PRICE</label><input type="text" id="f_price" placeholder="e.g. 5,250"></div>
           <div class="form-group"><label>ACTION (BUY/SELL)</label><input type="text" id="f_action"></div>
           <div class="form-group"><label>LOT</label><input type="text" id="f_lot"></div>
-          <div class="form-group"><label>PERCENTAGE GAIN</label><input type="text" id="f_gain"></div>
+          <div class="form-group"><label>PERCENTAGE GAIN</label><input type="text" id="f_gain" placeholder="e.g. 5% or -2.5%"></div>
           <div class="form-group"><label>BROKER</label><input type="text" id="f_broker"></div>
           <div class="form-group"><label>DATE</label><input type="date" id="f_date"></div>
         `;
@@ -613,8 +646,8 @@
       } else if (cat === 'foreign') {
         container.innerHTML = `
           <div class="form-group"><label>EMITEN/COMMODITY</label><input type="text" id="f_emiten"></div>
-          <div class="form-group"><label>PROFIT</label><input type="text" id="f_profit"></div>
-          <div class="form-group"><label>PERCENTAGE GAIN</label><input type="text" id="f_gain"></div>
+          <div class="form-group"><label>PROFIT</label><input type="text" id="f_profit" placeholder="e.g. +$150 or -$50"></div>
+          <div class="form-group"><label>PERCENTAGE GAIN</label><input type="text" id="f_gain" placeholder="e.g. 10% or -3%"></div>
           <div class="form-group"><label>DATE</label><input type="date" id="f_date"></div>
         `;
       } else if (cat === 'learning') {
