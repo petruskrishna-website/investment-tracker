@@ -79,7 +79,6 @@
       font-weight: bold;
     }
 
-    /* Grid layout: Left side (Saham/Foreign/Learning) is larger, Right side (Reksa) is smaller */
     .dashboard-grid {
       display: grid;
       grid-template-columns: 2.2fr 1fr;
@@ -123,7 +122,6 @@
       letter-spacing: 1px;
     }
 
-    /* Scrollable Table Container */
     .table-container {
       width: 100%;
       overflow-x: auto;
@@ -156,13 +154,14 @@
       color: #e5e7eb;
     }
 
-    /* Special Text Wrapping Rules for Reksa Dana Table Only */
-    #reksa-table {
+    /* Text Wrapping Rules for Reksa Dana & Learning Tables */
+    #reksa-table,
+    #learning-table {
       table-layout: auto;
     }
 
-    #reksa-table th, 
-    #reksa-table td {
+    #reksa-table th, #reksa-table td,
+    #learning-table th, #learning-table td {
       white-space: normal;
       word-break: break-word;
       overflow: visible;
@@ -186,7 +185,6 @@
       color: #fff;
     }
 
-    /* Floating Action Button */
     .fab {
       position: fixed;
       bottom: 24px;
@@ -213,7 +211,6 @@
       background-color: #ffb733;
     }
 
-    /* Modal Styling */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -306,7 +303,7 @@
   </header>
 
   <div class="dashboard-grid">
-    <!-- Left Column (Main / Expanded) -->
+    <!-- Left Column -->
     <div class="column">
       <!-- 1. SAHAM -->
       <div class="card">
@@ -351,11 +348,11 @@
         </div>
       </div>
 
-      <!-- 3. PAPER TRADING / STILL LEARNING -->
+      <!-- 3. PAPER TRADING / STILL LEARNING (With Text Wrapping) -->
       <div class="card">
         <div class="card-title">Paper Trading / Still Learning</div>
         <div class="table-container">
-          <table style="min-width: 300px;">
+          <table id="learning-table">
             <thead>
               <tr>
                 <th style="width: 35px;">No</th>
@@ -369,7 +366,7 @@
       </div>
     </div>
 
-    <!-- Right Column (Smaller / Compact) -->
+    <!-- Right Column -->
     <div class="column">
       <!-- REKSA DANA (With Text Wrapping) -->
       <div class="card">
@@ -532,11 +529,11 @@
         </tr>
       `).join('') || `<tr><td colspan="${isAuthenticated ? 6 : 5}" style="text-align:center; color:#555;">No records</td></tr>`;
 
-      // Learning
+      // Learning (With Text Wrapping)
       document.getElementById('learning-body').innerHTML = store.learning.map((item, i) => `
         <tr>
           <td>${i + 1}</td>
-          <td title="${item.note || ''}">${item.note || ''}</td>
+          <td>${item.note || ''}</td>
           ${isAuthenticated ? `<td><button class="btn-delete" onclick="deleteEntry('learning', ${i})">✕</button></td>` : ''}
         </tr>
       `).join('') || `<tr><td colspan="${isAuthenticated ? 3 : 2}" style="text-align:center; color:#555;">No records</td></tr>`;
