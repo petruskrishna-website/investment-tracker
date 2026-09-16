@@ -1,1 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Investment Record Terminal</title>
+  <style>
+    :root {
+      --bg-color: #0c0f12;
+      --card-bg: #141920;
+      --border-color: #2a3441;
+      --text-main: #d1d5db;
+      --text-header: #ff9d00; /* Bloomberg Amber */
+      --accent-green: #00e676;
+      --accent-dim: #1f2937;
+    }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Courier New', Courier, monospace, sans-serif;
+      padding: 24px;
+    }
+
+    header {
+      border-bottom: 2px solid var(--text-header);
+      padding-bottom: 12px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      color: var(--text-header);
+      font-size: 1.5rem;
+      letter-spacing: 1px;
+    }
+
+    .status-badge {
+      font-size: 0.8rem;
+      color: var(--accent-green);
+      background: rgba(0, 230, 118, 0.1);
+      padding: 4px 8px;
+      border: 1px solid var(--accent-green);
+      border-radius: 4px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .card-title {
+      background-color: var(--accent-dim);
+      color: var(--text-header);
+      padding: 10px 14px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: rgba(255, 255, 255, 0.03);
+      color: #9ca3af;
+      font-weight: 600;
+    }
+
+    td {
+      color: #e5e7eb;
+    }
+
+    /* Floating Action Button */
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background-color: var(--text-header);
+      color: #000;
+      font-size: 28px;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(255, 157, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .fab:hover {
+      transform: scale(1.08);
+      background-color: #ffb733;
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(3px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal {
+      background: var(--card-bg);
+      border: 1px solid var(--text-header);
+      width: 90%;
+      max-width: 420px;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    }
+
+    .modal h3 {
+      color: var(--text-header);
+      margin-bottom: 16px;
+      font-size: 1.1rem;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      margin-bottom: 4px;
+      color: #9ca3af;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 8px;
+      background: #090c0f;
+      border: 1px solid var(--border-color);
+      color: #fff;
+      font-family: inherit;
+      border-radius: 3px;
+    }
+
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: 1px solid var(--text-header);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+    }
+
+    .btn-secondary { background: #374151; color: #fff; }
+    .btn-primary { background: var(--text-header); color: #000; }
+
+    .error-msg {
+      color: #ef4444;
+      font-size: 0.75rem;
+      margin-top: 4px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>SYSTEM // INVESTMENT_RECORD</h1>
+    <div class="status-badge">LIVE TERMINAL</div>
+  </header>
+
+  <div class="dashboard-grid">
+    <!-- Left Column -->
+    <div class="column">
+      <div class="card">
+        <div class="card-title">SAHAM</div>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th><th>Emiten</th><th>Action</th><th>Lot</th><th>% Gain</th><th>Broker</th><th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="saham-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="column">
+      <div class="card">
+        <div class="card-title">Reksa Dana</div>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th><th>Nama Reksa Dana</th><th>Jenis</th><th>Keterangan</th>
+            </tr>
+          </thead>
+          <tbody id="reksa-body"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Saham Luar Negeri & Indices & Crypto</div>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th><th>Emiten/Commodity</th><th>Profit</th><th>% Gain</th><th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="foreign-body"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Paper Trading / Still Learning</div>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th><th>Notes & Strategy</th>
+            </tr>
+          </thead>
+          <tbody id="learning-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Add Button -->
+  <button class="fab" onclick="openAuthModal()">+</button>
+
+  <!-- Password Modal -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal">
+      <h3>SECURITY CHECK</h3>
+      <div class="form-group">
+        <label for="passInput">ENTER EDITING PASSWORD</label>
+        <input type="password" id="passInput" placeholder="••••••••" />
+        <div class="error-msg" id="authError">Invalid password. Access denied.</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('authModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="verifyPassword()">Authenticate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Entry Modal -->
+  <div class="modal-overlay" id="entryModal">
+    <div class="modal">
+      <h3>ADD NEW ENTRY</h3>
+      <div class="form-group">
+        <label>SELECT CATEGORY</label>
+        <select id="categorySelect" onchange="renderFormFields()">
+          <option value="saham">SAHAM</option>
+          <option value="reksa">Reksa Dana</option>
+          <option value="foreign">Saham Luar Negeri & Indices & Crypto</option>
+          <option value="learning">Paper Trading / Still Learning</option>
+        </select>
+      </div>
+      
+      <div id="dynamicFields"></div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('entryModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEntry()">Save Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PASSWORD_REQUIRED = "9E25Pnbr";
+
+    // Initial default state
+    let store = JSON.parse(localStorage.getItem('investRecordData')) || {
+      saham: [],
+      reksa: [],
+      foreign: [],
+      learning: [
+        { id: 1, note: "Forex Trading and Less Aggressive Strategy Building" },
+        { id: 2, note: "Better entry protocol and risk management to avoid bearish news from...etc" }
+      ]
+    };
+
+    function renderTables() {
+      // Saham
+      document.getElementById('saham-body').innerHTML = store.saham.map((item, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${item.emiten || ''}</td>
+          <td>${item.action || ''}</td>
+          <td>${item.lot || ''}</td>
+          <td>${item.gain || ''}</td>
+          <td>${item.broker || ''}</td>
+          <td>${item.date || ''}</td>
+        </tr>
+      `).join('') || `<tr><td colspan="7" style="text-align:center; color:#555;">No records</td></tr>`;
+
+      // Reksa
+      document.getElementById('reksa-body').innerHTML = store.reksa.map((item, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${item.nama || ''}</td>
+          <td>${item.jenis || ''}</td>
+          <td>${item.ket || ''}</td>
+        </tr>
+      `).join('') || `<tr><td colspan="4" style="text-align:center; color:#555;">No records</td></tr>`;
+
+      // Foreign
+      document.getElementById('foreign-body').innerHTML = store.foreign.map((item, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${item.emiten || ''}</td>
+          <td>${item.profit || ''}</td>
+          <td>${item.gain || ''}</td>
+          <td>${item.date || ''}</td>
+        </tr>
+      `).join('') || `<tr><td colspan="5" style="text-align:center; color:#555;">No records</td></tr>`;
+
+      // Learning
+      document.getElementById('learning-body').innerHTML = store.learning.map((item, i) => `
+        <tr>
+          <td style="width: 40px;">${i + 1}</td>
+          <td>${item.note || ''}</td>
+        </tr>
+      `).join('') || `<tr><td colspan="2" style="text-align:center; color:#555;">No records</td></tr>`;
+    }
+
+    function openAuthModal() {
+      document.getElementById('passInput').value = '';
+      document.getElementById('authError').style.display = 'none';
+      document.getElementById('authModal').style.display = 'flex';
+      document.getElementById('passInput').focus();
+    }
+
+    function verifyPassword() {
+      const input = document.getElementById('passInput').value;
+      if (input === PASSWORD_REQUIRED) {
+        closeModal('authModal');
+        openEntryModal();
+      } else {
+        document.getElementById('authError').style.display = 'block';
+      }
+    }
+
+    function openEntryModal() {
+      document.getElementById('entryModal').style.display = 'flex';
+      renderFormFields();
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    function renderFormFields() {
+      const cat = document.getElementById('categorySelect').value;
+      const container = document.getElementById('dynamicFields');
+      
+      if (cat === 'saham') {
+        container.innerHTML = `
+          <div class="form-group"><label>EMITEN</label><input type="text" id="f_emiten"></div>
+          <div class="form-group"><label>ACTION (BUY/SELL)</label><input type="text" id="f_action"></div>
+          <div class="form-group"><label>LOT</label><input type="text" id="f_lot"></div>
+          <div class="form-group"><label>PERCENTAGE GAIN</label><input type="text" id="f_gain"></div>
+          <div class="form-group"><label>BROKER</label><input type="text" id="f_broker"></div>
+          <div class="form-group"><label>DATE</label><input type="date" id="f_date"></div>
+        `;
+      } else if (cat === 'reksa') {
+        container.innerHTML = `
+          <div class="form-group"><label>NAMA REKSA DANA</label><input type="text" id="f_nama"></div>
+          <div class="form-group"><label>JENIS</label><input type="text" id="f_jenis"></div>
+          <div class="form-group"><label>KETERANGAN</label><input type="text" id="f_ket"></div>
+        `;
+      } else if (cat === 'foreign') {
+        container.innerHTML = `
+          <div class="form-group"><label>EMITEN/COMMODITY</label><input type="text" id="f_emiten"></div>
+          <div class="form-group"><label>PROFIT</label><input type="text" id="f_profit"></div>
+          <div class="form-group"><label>PERCENTAGE GAIN</label><input type="text" id="f_gain"></div>
+          <div class="form-group"><label>DATE</label><input type="date" id="f_date"></div>
+        `;
+      } else if (cat === 'learning') {
+        container.innerHTML = `
+          <div class="form-group"><label>NOTE / STRATEGY</label><textarea id="f_note" rows="3"></textarea></div>
+        `;
+      }
+    }
+
+    function saveEntry() {
+      const cat = document.getElementById('categorySelect').value;
+
+      if (cat === 'saham') {
+        store.saham.push({
+          emiten: document.getElementById('f_emiten').value,
+          action: document.getElementById('f_action').value,
+          lot: document.getElementById('f_lot').value,
+          gain: document.getElementById('f_gain').value,
+          broker: document.getElementById('f_broker').value,
+          date: document.getElementById('f_date').value
+        });
+      } else if (cat === 'reksa') {
+        store.reksa.push({
+          nama: document.getElementById('f_nama').value,
+          jenis: document.getElementById('f_jenis').value,
+          ket: document.getElementById('f_ket').value
+        });
+      } else if (cat === 'foreign') {
+        store.foreign.push({
+          emiten: document.getElementById('f_emiten').value,
+          profit: document.getElementById('f_profit').value,
+          gain: document.getElementById('f_gain').value,
+          date: document.getElementById('f_date').value
+        });
+      } else if (cat === 'learning') {
+        store.learning.push({
+          note: document.getElementById('f_note').value
+        });
+      }
+
+      localStorage.setItem('investRecordData', JSON.stringify(store));
+      renderTables();
+      closeModal('entryModal');
+    }
+
+    // Allow pressing Enter on password field
+    document.getElementById('passInput').addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') verifyPassword();
+    });
+
+    renderTables();
+  </script>
+</body>
+</html>
