@@ -50,6 +50,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     .status-badge {
@@ -79,6 +80,7 @@
       font-weight: bold;
     }
 
+    /* Layout proportions: Left side wider, Right side (Reksa) smaller */
     .dashboard-grid {
       display: grid;
       grid-template-columns: 2.2fr 1fr;
@@ -154,7 +156,7 @@
       color: #e5e7eb;
     }
 
-    /* Dynamic Gain Styling Classes */
+    /* Gain/Loss Color Coding */
     .gain-positive {
       color: var(--accent-green) !important;
       font-weight: bold;
@@ -309,12 +311,12 @@
     <h1>SYSTEM // INVESTMENT_RECORD</h1>
     <div class="header-controls">
       <button class="btn-lock" id="lockBtn" onclick="toggleLock()">🔒 READ ONLY</button>
-      <div class="status-badge" id="syncStatus">CLOUD SYNCED</div>
+      <div class="status-badge" id="syncStatus">INITIALIZING...</div>
     </div>
   </header>
 
   <div class="dashboard-grid">
-    <!-- Left Column -->
+    <!-- Left Column (Main / Expanded) -->
     <div class="column">
       <!-- 1. SAHAM -->
       <div class="card">
@@ -377,7 +379,7 @@
       </div>
     </div>
 
-    <!-- Right Column -->
+    <!-- Right Column (Smaller / Compact) -->
     <div class="column">
       <!-- REKSA DANA -->
       <div class="card">
@@ -445,10 +447,8 @@
   <script>
     const PASSWORD_REQUIRED = "9E25Pnbr";
     
-    // Keyless Public Cloud KV Storage API (kvdb.io)
-    // You can replace 'invest_terminal_db_v1' with any custom unique bucket ID
-    const CLOUD_STORAGE_KEY = "invest_terminal_db_v1";
-    const CLOUD_URL = `https://kvdb.io/8xZ7W9uK34Lp2Q1v/${CLOUD_STORAGE_KEY}`;
+    // Fixed Cloud Database URL (Synced for all visitors automatically)
+    const CLOUD_URL = "https://jsonblob.com/api/jsonBlob/01a0aadc-829f-7873-9bfb-635c091b6e3e";
 
     let isAuthenticated = false;
 
@@ -464,7 +464,7 @@
 
     let store = JSON.parse(localStorage.getItem('investRecordData')) || defaultData;
 
-    // Helper: Formats Gain / Profit Text Color (Green for > 0.01%, Red for negative)
+    // Helper: Formats Gain / Profit Text Color (>0.01% -> Green, negative -> Red)
     function formatGainCell(value) {
       if (!value) return '';
       const cleanNum = parseFloat(value.toString().replace(/[^0-9.-]/g, ''));
@@ -478,18 +478,22 @@
       return value;
     }
 
-    // Cloud Data Sync (Fetches real data saved across devices)
+    // Automatic Cloud Database Fetch
     async function initCloudSync() {
       const statusEl = document.getElementById('syncStatus');
-      statusEl.innerText = "SYNCING...";
       try {
-        const res = await fetch(CLOUD_URL);
+        const res = await fetch(CLOUD_URL, {
+          headers: { 'Accept': 'application/json' }
+        });
         if (res.ok) {
           const cloudStore = await res.json();
-          if (cloudStore && typeof cloudStore === 'object') {
+          if (cloudStore && typeof cloudStore === 'object' && Object.keys(cloudStore).length > 0) {
             store = cloudStore;
             localStorage.setItem('investRecordData', JSON.stringify(store));
             statusEl.innerText = "CLOUD SYNCED";
+          } else if (Object.keys(cloudStore).length === 0) {
+            // First-time initialization if blob is empty
+            pushToCloud();
           }
         } else {
           statusEl.innerText = "LOCAL MODE";
@@ -500,14 +504,19 @@
       renderTables();
     }
 
+    // Automatic Cloud Database Push
     async function pushToCloud() {
       const statusEl = document.getElementById('syncStatus');
       statusEl.innerText = "SAVING...";
       localStorage.setItem('investRecordData', JSON.stringify(store));
+
       try {
         const res = await fetch(CLOUD_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json' 
+          },
           body: JSON.stringify(store)
         });
         if (res.ok) {
@@ -706,6 +715,13 @@
     document.getElementById('passInput').addEventListener('keyup', (e) => {
       if (e.key === 'Enter') verifyPassword();
     });
+
+    // Auto-poll for changes every 10 seconds
+    setInterval(() => {
+      if (document.getElementById('entryModal').style.display !== 'flex') {
+        initCloudSync();
+      }
+    }, 10000);
 
     initCloudSync();
   </script>
