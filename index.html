@@ -122,7 +122,7 @@
       letter-spacing: 1px;
     }
 
-    /* Mobile Responsive Scrollable Table Container */
+    /* Scrollable Table Container & Column Width Fixes */
     .table-container {
       width: 100%;
       overflow-x: auto;
@@ -133,13 +133,16 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 0.82rem;
-      white-space: nowrap;
+      table-layout: fixed; /* Ensures strict column widths */
     }
 
     th, td {
       border: 1px solid var(--border-color);
       padding: 8px 10px;
       text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     th {
@@ -150,11 +153,6 @@
 
     td {
       color: #e5e7eb;
-    }
-
-    td.wrap-text {
-      white-space: normal;
-      min-width: 200px;
     }
 
     .btn-delete {
@@ -299,18 +297,18 @@
       <div class="card">
         <div class="card-title">SAHAM</div>
         <div class="table-container">
-          <table>
+          <table style="min-width: 600px;">
             <thead>
               <tr>
-                <th>No</th>
-                <th>Emiten</th>
-                <th>Price</th>
-                <th>Action</th>
-                <th>Lot</th>
-                <th>% Gain</th>
-                <th>Broker</th>
-                <th>Date</th>
-                <th class="action-col"></th>
+                <th style="width: 35px;">No</th>
+                <th style="width: 80px;">Emiten</th>
+                <th style="width: 80px;">Price</th>
+                <th style="width: 70px;">Action</th>
+                <th style="width: 50px;">Lot</th>
+                <th style="width: 70px;">% Gain</th>
+                <th style="width: 80px;">Broker</th>
+                <th style="width: 90px;">Date</th>
+                <th class="action-col" style="width: 35px;"></th>
               </tr>
             </thead>
             <tbody id="saham-body"></tbody>
@@ -324,14 +322,14 @@
       <div class="card">
         <div class="card-title">Reksa Dana</div>
         <div class="table-container">
-          <table>
+          <table style="min-width: 450px;">
             <thead>
               <tr>
-                <th>No</th>
-                <th>Nama Reksa Dana</th>
-                <th>Jenis</th>
+                <th style="width: 35px;">No</th>
+                <th style="width: 130px;">Nama Reksa Dana</th>
+                <th style="width: 90px;">Jenis</th>
                 <th>Keterangan</th>
-                <th class="action-col"></th>
+                <th class="action-col" style="width: 35px;"></th>
               </tr>
             </thead>
             <tbody id="reksa-body"></tbody>
@@ -342,15 +340,15 @@
       <div class="card">
         <div class="card-title">Saham Luar Negeri & Indices & Crypto</div>
         <div class="table-container">
-          <table>
+          <table style="min-width: 450px;">
             <thead>
               <tr>
-                <th>No</th>
-                <th>Emiten/Commodity</th>
-                <th>Profit</th>
-                <th>% Gain</th>
-                <th>Date</th>
-                <th class="action-col"></th>
+                <th style="width: 35px;">No</th>
+                <th style="width: 140px;">Emiten/Commodity</th>
+                <th style="width: 80px;">Profit</th>
+                <th style="width: 70px;">% Gain</th>
+                <th style="width: 90px;">Date</th>
+                <th class="action-col" style="width: 35px;"></th>
               </tr>
             </thead>
             <tbody id="foreign-body"></tbody>
@@ -361,12 +359,12 @@
       <div class="card">
         <div class="card-title">Paper Trading / Still Learning</div>
         <div class="table-container">
-          <table>
+          <table style="min-width: 300px;">
             <thead>
               <tr>
-                <th>No</th>
+                <th style="width: 35px;">No</th>
                 <th>Notes & Strategy</th>
-                <th class="action-col"></th>
+                <th class="action-col" style="width: 35px;"></th>
               </tr>
             </thead>
             <tbody id="learning-body"></tbody>
@@ -420,15 +418,11 @@
 
   <script>
     const PASSWORD_REQUIRED = "9E25Pnbr";
-    
-    // Cloud API setup (JSONBin.io free keyless/public bin or custom endpoint)
-    // You can replace JSONBIN_BIN_ID with your own bin ID if desired
     const JSONBIN_BIN_ID = "66cc1000e41b4d34e4256789"; 
     const CLOUD_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
 
     let isAuthenticated = false;
 
-    // Initial state setup
     const defaultData = {
       saham: [],
       reksa: [],
@@ -441,7 +435,6 @@
 
     let store = JSON.parse(localStorage.getItem('investRecordData')) || defaultData;
 
-    // Cloud Data Fetching & Sync
     async function initCloudSync() {
       const statusEl = document.getElementById('syncStatus');
       statusEl.innerText = "SYNCING...";
@@ -470,9 +463,7 @@
       try {
         await fetch(CLOUD_URL, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(store)
         });
         statusEl.innerText = "CLOUD SYNCED";
@@ -489,13 +480,13 @@
       document.getElementById('saham-body').innerHTML = store.saham.map((item, i) => `
         <tr>
           <td>${i + 1}</td>
-          <td>${item.emiten || ''}</td>
-          <td>${item.price || ''}</td>
-          <td>${item.action || ''}</td>
-          <td>${item.lot || ''}</td>
-          <td>${item.gain || ''}</td>
-          <td>${item.broker || ''}</td>
-          <td>${item.date || ''}</td>
+          <td title="${item.emiten || ''}">${item.emiten || ''}</td>
+          <td title="${item.price || ''}">${item.price || ''}</td>
+          <td title="${item.action || ''}">${item.action || ''}</td>
+          <td title="${item.lot || ''}">${item.lot || ''}</td>
+          <td title="${item.gain || ''}">${item.gain || ''}</td>
+          <td title="${item.broker || ''}">${item.broker || ''}</td>
+          <td title="${item.date || ''}">${item.date || ''}</td>
           ${isAuthenticated ? `<td><button class="btn-delete" onclick="deleteEntry('saham', ${i})">✕</button></td>` : ''}
         </tr>
       `).join('') || `<tr><td colspan="${isAuthenticated ? 9 : 8}" style="text-align:center; color:#555;">No records</td></tr>`;
@@ -504,9 +495,9 @@
       document.getElementById('reksa-body').innerHTML = store.reksa.map((item, i) => `
         <tr>
           <td>${i + 1}</td>
-          <td>${item.nama || ''}</td>
-          <td>${item.jenis || ''}</td>
-          <td class="wrap-text">${item.ket || ''}</td>
+          <td title="${item.nama || ''}">${item.nama || ''}</td>
+          <td title="${item.jenis || ''}">${item.jenis || ''}</td>
+          <td title="${item.ket || ''}">${item.ket || ''}</td>
           ${isAuthenticated ? `<td><button class="btn-delete" onclick="deleteEntry('reksa', ${i})">✕</button></td>` : ''}
         </tr>
       `).join('') || `<tr><td colspan="${isAuthenticated ? 5 : 4}" style="text-align:center; color:#555;">No records</td></tr>`;
@@ -515,10 +506,10 @@
       document.getElementById('foreign-body').innerHTML = store.foreign.map((item, i) => `
         <tr>
           <td>${i + 1}</td>
-          <td>${item.emiten || ''}</td>
-          <td>${item.profit || ''}</td>
-          <td>${item.gain || ''}</td>
-          <td>${item.date || ''}</td>
+          <td title="${item.emiten || ''}">${item.emiten || ''}</td>
+          <td title="${item.profit || ''}">${item.profit || ''}</td>
+          <td title="${item.gain || ''}">${item.gain || ''}</td>
+          <td title="${item.date || ''}">${item.date || ''}</td>
           ${isAuthenticated ? `<td><button class="btn-delete" onclick="deleteEntry('foreign', ${i})">✕</button></td>` : ''}
         </tr>
       `).join('') || `<tr><td colspan="${isAuthenticated ? 6 : 5}" style="text-align:center; color:#555;">No records</td></tr>`;
@@ -526,9 +517,9 @@
       // Learning
       document.getElementById('learning-body').innerHTML = store.learning.map((item, i) => `
         <tr>
-          <td style="width: 40px;">${i + 1}</td>
-          <td class="wrap-text">${item.note || ''}</td>
-          ${isAuthenticated ? `<td style="width: 30px;"><button class="btn-delete" onclick="deleteEntry('learning', ${i})">✕</button></td>` : ''}
+          <td>${i + 1}</td>
+          <td title="${item.note || ''}">${item.note || ''}</td>
+          ${isAuthenticated ? `<td><button class="btn-delete" onclick="deleteEntry('learning', ${i})">✕</button></td>` : ''}
         </tr>
       `).join('') || `<tr><td colspan="${isAuthenticated ? 3 : 2}" style="text-align:center; color:#555;">No records</td></tr>`;
     }
@@ -664,12 +655,10 @@
       }
     }
 
-    // Keypress handler for password modal
     document.getElementById('passInput').addEventListener('keyup', (e) => {
       if (e.key === 'Enter') verifyPassword();
     });
 
-    // Run initialization
     initCloudSync();
   </script>
 </body>
