@@ -79,13 +79,14 @@
       font-weight: bold;
     }
 
+    /* Grid layout: Left side (Saham/Foreign/Learning) is larger, Right side (Reksa) is smaller */
     .dashboard-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 2.2fr 1fr;
       gap: 20px;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 950px) {
       body {
         padding: 10px;
       }
@@ -122,7 +123,7 @@
       letter-spacing: 1px;
     }
 
-    /* Scrollable Table Container & Column Width Fixes */
+    /* Scrollable Table Container */
     .table-container {
       width: 100%;
       overflow-x: auto;
@@ -133,7 +134,7 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 0.82rem;
-      table-layout: fixed; /* Ensures strict column widths */
+      table-layout: fixed;
     }
 
     th, td {
@@ -153,6 +154,19 @@
 
     td {
       color: #e5e7eb;
+    }
+
+    /* Special Text Wrapping Rules for Reksa Dana Table Only */
+    #reksa-table {
+      table-layout: auto;
+    }
+
+    #reksa-table th, 
+    #reksa-table td {
+      white-space: normal;
+      word-break: break-word;
+      overflow: visible;
+      text-overflow: clip;
     }
 
     .btn-delete {
@@ -292,8 +306,9 @@
   </header>
 
   <div class="dashboard-grid">
-    <!-- Left Column -->
+    <!-- Left Column (Main / Expanded) -->
     <div class="column">
+      <!-- 1. SAHAM -->
       <div class="card">
         <div class="card-title">SAHAM</div>
         <div class="table-container">
@@ -315,32 +330,12 @@
           </table>
         </div>
       </div>
-    </div>
 
-    <!-- Right Column -->
-    <div class="column">
-      <div class="card">
-        <div class="card-title">Reksa Dana</div>
-        <div class="table-container">
-          <table style="min-width: 450px;">
-            <thead>
-              <tr>
-                <th style="width: 35px;">No</th>
-                <th style="width: 130px;">Nama Reksa Dana</th>
-                <th style="width: 90px;">Jenis</th>
-                <th>Keterangan</th>
-                <th class="action-col" style="width: 35px;"></th>
-              </tr>
-            </thead>
-            <tbody id="reksa-body"></tbody>
-          </table>
-        </div>
-      </div>
-
+      <!-- 2. SAHAM LUAR NEGERI & INDICES & CRYPTO -->
       <div class="card">
         <div class="card-title">Saham Luar Negeri & Indices & Crypto</div>
         <div class="table-container">
-          <table style="min-width: 450px;">
+          <table style="min-width: 500px;">
             <thead>
               <tr>
                 <th style="width: 35px;">No</th>
@@ -356,6 +351,7 @@
         </div>
       </div>
 
+      <!-- 3. PAPER TRADING / STILL LEARNING -->
       <div class="card">
         <div class="card-title">Paper Trading / Still Learning</div>
         <div class="table-container">
@@ -368,6 +364,28 @@
               </tr>
             </thead>
             <tbody id="learning-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column (Smaller / Compact) -->
+    <div class="column">
+      <!-- REKSA DANA (With Text Wrapping) -->
+      <div class="card">
+        <div class="card-title">Reksa Dana</div>
+        <div class="table-container">
+          <table id="reksa-table">
+            <thead>
+              <tr>
+                <th style="width: 30px;">No</th>
+                <th>Nama Reksa Dana</th>
+                <th>Jenis</th>
+                <th>Keterangan</th>
+                <th class="action-col" style="width: 30px;"></th>
+              </tr>
+            </thead>
+            <tbody id="reksa-body"></tbody>
           </table>
         </div>
       </div>
@@ -491,13 +509,13 @@
         </tr>
       `).join('') || `<tr><td colspan="${isAuthenticated ? 9 : 8}" style="text-align:center; color:#555;">No records</td></tr>`;
 
-      // Reksa
+      // Reksa Dana (With Text Wrapping)
       document.getElementById('reksa-body').innerHTML = store.reksa.map((item, i) => `
         <tr>
           <td>${i + 1}</td>
-          <td title="${item.nama || ''}">${item.nama || ''}</td>
-          <td title="${item.jenis || ''}">${item.jenis || ''}</td>
-          <td title="${item.ket || ''}">${item.ket || ''}</td>
+          <td>${item.nama || ''}</td>
+          <td>${item.jenis || ''}</td>
+          <td>${item.ket || ''}</td>
           ${isAuthenticated ? `<td><button class="btn-delete" onclick="deleteEntry('reksa', ${i})">✕</button></td>` : ''}
         </tr>
       `).join('') || `<tr><td colspan="${isAuthenticated ? 5 : 4}" style="text-align:center; color:#555;">No records</td></tr>`;
