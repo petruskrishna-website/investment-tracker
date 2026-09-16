@@ -13,6 +13,7 @@
       --text-header: #ff9d00; /* Bloomberg Amber */
       --accent-green: #00e676;
       --accent-dim: #1f2937;
+      --accent-red: #ef4444;
     }
 
     * {
@@ -25,40 +26,72 @@
       background-color: var(--bg-color);
       color: var(--text-main);
       font-family: 'Courier New', Courier, monospace, sans-serif;
-      padding: 24px;
+      padding: 16px;
     }
 
     header {
       border-bottom: 2px solid var(--text-header);
       padding-bottom: 12px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     header h1 {
       color: var(--text-header);
-      font-size: 1.5rem;
+      font-size: 1.3rem;
       letter-spacing: 1px;
     }
 
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .status-badge {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--accent-green);
       background: rgba(0, 230, 118, 0.1);
       padding: 4px 8px;
       border: 1px solid var(--accent-green);
       border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .btn-lock {
+      background: transparent;
+      border: 1px solid var(--text-header);
+      color: var(--text-header);
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+
+    .btn-lock.unlocked {
+      background: var(--text-header);
+      color: #000;
+      font-weight: bold;
     }
 
     .dashboard-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 24px;
+      gap: 20px;
     }
 
     @media (max-width: 900px) {
+      body {
+        padding: 10px;
+      }
+      header h1 {
+        font-size: 1.1rem;
+      }
       .dashboard-grid {
         grid-template-columns: 1fr;
       }
@@ -67,7 +100,7 @@
     .column {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
     }
 
     .card {
@@ -82,17 +115,25 @@
       color: var(--text-header);
       padding: 10px 14px;
       font-weight: bold;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       text-align: center;
       border-bottom: 1px solid var(--border-color);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
 
+    /* Mobile Responsive Scrollable Table Container */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
+      white-space: nowrap;
     }
 
     th, td {
@@ -109,6 +150,28 @@
 
     td {
       color: #e5e7eb;
+    }
+
+    td.wrap-text {
+      white-space: normal;
+      min-width: 200px;
+    }
+
+    .btn-delete {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--accent-red);
+      border: 1px solid var(--accent-red);
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .btn-delete:hover {
+      background: var(--accent-red);
+      color: #fff;
     }
 
     /* Floating Action Button */
@@ -130,6 +193,7 @@
       align-items: center;
       justify-content: center;
       transition: transform 0.2s, background-color 0.2s;
+      z-index: 99;
     }
 
     .fab:hover {
@@ -157,6 +221,8 @@
       padding: 20px;
       border-radius: 6px;
       box-shadow: 0 0 20px rgba(0,0,0,0.8);
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     .modal h3 {
@@ -210,7 +276,7 @@
     .btn-primary { background: var(--text-header); color: #000; }
 
     .error-msg {
-      color: #ef4444;
+      color: var(--accent-red);
       font-size: 0.75rem;
       margin-top: 4px;
       display: none;
@@ -221,7 +287,10 @@
 
   <header>
     <h1>SYSTEM // INVESTMENT_RECORD</h1>
-    <div class="status-badge">LIVE TERMINAL</div>
+    <div class="header-controls">
+      <button class="btn-lock" id="lockBtn" onclick="toggleLock()">🔒 READ ONLY</button>
+      <div class="status-badge" id="syncStatus">CLOUD SYNCED</div>
+    </div>
   </header>
 
   <div class="dashboard-grid">
@@ -229,14 +298,24 @@
     <div class="column">
       <div class="card">
         <div class="card-title">SAHAM</div>
-        <table>
-          <thead>
-            <tr>
-              <th>No</th><th>Emiten</th><th>Action</th><th>Lot</th><th>% Gain</th><th>Broker</th><th>Date</th>
-            </tr>
-          </thead>
-          <tbody id="saham-body"></tbody>
-        </table>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Emiten</th>
+                <th>Price</th>
+                <th>Action</th>
+                <th>Lot</th>
+                <th>% Gain</th>
+                <th>Broker</th>
+                <th>Date</th>
+                <th class="action-col"></th>
+              </tr>
+            </thead>
+            <tbody id="saham-body"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -244,44 +323,61 @@
     <div class="column">
       <div class="card">
         <div class="card-title">Reksa Dana</div>
-        <table>
-          <thead>
-            <tr>
-              <th>No</th><th>Nama Reksa Dana</th><th>Jenis</th><th>Keterangan</th>
-            </tr>
-          </thead>
-          <tbody id="reksa-body"></tbody>
-        </table>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Nama Reksa Dana</th>
+                <th>Jenis</th>
+                <th>Keterangan</th>
+                <th class="action-col"></th>
+              </tr>
+            </thead>
+            <tbody id="reksa-body"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="card">
         <div class="card-title">Saham Luar Negeri & Indices & Crypto</div>
-        <table>
-          <thead>
-            <tr>
-              <th>No</th><th>Emiten/Commodity</th><th>Profit</th><th>% Gain</th><th>Date</th>
-            </tr>
-          </thead>
-          <tbody id="foreign-body"></tbody>
-        </table>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Emiten/Commodity</th>
+                <th>Profit</th>
+                <th>% Gain</th>
+                <th>Date</th>
+                <th class="action-col"></th>
+              </tr>
+            </thead>
+            <tbody id="foreign-body"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="card">
         <div class="card-title">Paper Trading / Still Learning</div>
-        <table>
-          <thead>
-            <tr>
-              <th>No</th><th>Notes & Strategy</th>
-            </tr>
-          </thead>
-          <tbody id="learning-body"></tbody>
-        </table>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Notes & Strategy</th>
+                <th class="action-col"></th>
+              </tr>
+            </thead>
+            <tbody id="learning-body"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Floating Add Button -->
-  <button class="fab" onclick="openAuthModal()">+</button>
+  <button class="fab" onclick="handleFabClick()">+</button>
 
   <!-- Password Modal -->
   <div class="modal-overlay" id="authModal">
@@ -324,31 +420,85 @@
 
   <script>
     const PASSWORD_REQUIRED = "9E25Pnbr";
+    
+    // Cloud API setup (JSONBin.io free keyless/public bin or custom endpoint)
+    // You can replace JSONBIN_BIN_ID with your own bin ID if desired
+    const JSONBIN_BIN_ID = "66cc1000e41b4d34e4256789"; 
+    const CLOUD_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
 
-    // Initial default state
-    let store = JSON.parse(localStorage.getItem('investRecordData')) || {
+    let isAuthenticated = false;
+
+    // Initial state setup
+    const defaultData = {
       saham: [],
       reksa: [],
       foreign: [],
       learning: [
-        { id: 1, note: "Forex Trading and Less Aggressive Strategy Building" },
-        { id: 2, note: "Better entry protocol and risk management to avoid bearish news from...etc" }
+        { note: "Forex Trading and Less Aggressive Strategy Building" },
+        { note: "Better entry protocol and risk management to avoid bearish news from...etc" }
       ]
     };
 
+    let store = JSON.parse(localStorage.getItem('investRecordData')) || defaultData;
+
+    // Cloud Data Fetching & Sync
+    async function initCloudSync() {
+      const statusEl = document.getElementById('syncStatus');
+      statusEl.innerText = "SYNCING...";
+      try {
+        const res = await fetch(CLOUD_URL + '/latest', {
+          headers: { 'X-Bin-Meta': 'false' }
+        });
+        if (res.ok) {
+          const cloudStore = await res.json();
+          if (cloudStore && typeof cloudStore === 'object') {
+            store = cloudStore;
+            localStorage.setItem('investRecordData', JSON.stringify(store));
+            statusEl.innerText = "CLOUD SYNCED";
+          }
+        }
+      } catch (err) {
+        statusEl.innerText = "LOCAL MODE";
+      }
+      renderTables();
+    }
+
+    async function pushToCloud() {
+      const statusEl = document.getElementById('syncStatus');
+      statusEl.innerText = "SAVING...";
+      localStorage.setItem('investRecordData', JSON.stringify(store));
+      try {
+        await fetch(CLOUD_URL, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(store)
+        });
+        statusEl.innerText = "CLOUD SYNCED";
+      } catch (err) {
+        statusEl.innerText = "SAVED LOCALLY";
+      }
+    }
+
     function renderTables() {
+      const actionHeaderVisibility = isAuthenticated ? 'table-cell' : 'none';
+      document.querySelectorAll('.action-col').forEach(el => el.style.display = actionHeaderVisibility);
+
       // Saham
       document.getElementById('saham-body').innerHTML = store.saham.map((item, i) => `
         <tr>
           <td>${i + 1}</td>
           <td>${item.emiten || ''}</td>
+          <td>${item.price || ''}</td>
           <td>${item.action || ''}</td>
           <td>${item.lot || ''}</td>
           <td>${item.gain || ''}</td>
           <td>${item.broker || ''}</td>
           <td>${item.date || ''}</td>
+          ${isAuthenticated ? `<td><button class="btn-delete" onclick="deleteEntry('saham', ${i})">✕</button></td>` : ''}
         </tr>
-      `).join('') || `<tr><td colspan="7" style="text-align:center; color:#555;">No records</td></tr>`;
+      `).join('') || `<tr><td colspan="${isAuthenticated ? 9 : 8}" style="text-align:center; color:#555;">No records</td></tr>`;
 
       // Reksa
       document.getElementById('reksa-body').innerHTML = store.reksa.map((item, i) => `
@@ -356,9 +506,10 @@
           <td>${i + 1}</td>
           <td>${item.nama || ''}</td>
           <td>${item.jenis || ''}</td>
-          <td>${item.ket || ''}</td>
+          <td class="wrap-text">${item.ket || ''}</td>
+          ${isAuthenticated ? `<td><button class="btn-delete" onclick="deleteEntry('reksa', ${i})">✕</button></td>` : ''}
         </tr>
-      `).join('') || `<tr><td colspan="4" style="text-align:center; color:#555;">No records</td></tr>`;
+      `).join('') || `<tr><td colspan="${isAuthenticated ? 5 : 4}" style="text-align:center; color:#555;">No records</td></tr>`;
 
       // Foreign
       document.getElementById('foreign-body').innerHTML = store.foreign.map((item, i) => `
@@ -368,16 +519,38 @@
           <td>${item.profit || ''}</td>
           <td>${item.gain || ''}</td>
           <td>${item.date || ''}</td>
+          ${isAuthenticated ? `<td><button class="btn-delete" onclick="deleteEntry('foreign', ${i})">✕</button></td>` : ''}
         </tr>
-      `).join('') || `<tr><td colspan="5" style="text-align:center; color:#555;">No records</td></tr>`;
+      `).join('') || `<tr><td colspan="${isAuthenticated ? 6 : 5}" style="text-align:center; color:#555;">No records</td></tr>`;
 
       // Learning
       document.getElementById('learning-body').innerHTML = store.learning.map((item, i) => `
         <tr>
           <td style="width: 40px;">${i + 1}</td>
-          <td>${item.note || ''}</td>
+          <td class="wrap-text">${item.note || ''}</td>
+          ${isAuthenticated ? `<td style="width: 30px;"><button class="btn-delete" onclick="deleteEntry('learning', ${i})">✕</button></td>` : ''}
         </tr>
-      `).join('') || `<tr><td colspan="2" style="text-align:center; color:#555;">No records</td></tr>`;
+      `).join('') || `<tr><td colspan="${isAuthenticated ? 3 : 2}" style="text-align:center; color:#555;">No records</td></tr>`;
+    }
+
+    function toggleLock() {
+      if (isAuthenticated) {
+        isAuthenticated = false;
+        const btn = document.getElementById('lockBtn');
+        btn.innerText = "🔒 READ ONLY";
+        btn.classList.remove('unlocked');
+        renderTables();
+      } else {
+        openAuthModal();
+      }
+    }
+
+    function handleFabClick() {
+      if (isAuthenticated) {
+        openEntryModal();
+      } else {
+        openAuthModal();
+      }
     }
 
     function openAuthModal() {
@@ -390,7 +563,12 @@
     function verifyPassword() {
       const input = document.getElementById('passInput').value;
       if (input === PASSWORD_REQUIRED) {
+        isAuthenticated = true;
+        const btn = document.getElementById('lockBtn');
+        btn.innerText = "🔓 EDIT MODE";
+        btn.classList.add('unlocked');
         closeModal('authModal');
+        renderTables();
         openEntryModal();
       } else {
         document.getElementById('authError').style.display = 'block';
@@ -413,6 +591,7 @@
       if (cat === 'saham') {
         container.innerHTML = `
           <div class="form-group"><label>EMITEN</label><input type="text" id="f_emiten"></div>
+          <div class="form-group"><label>PRICE</label><input type="text" id="f_price" placeholder="e.g. 5,250"></div>
           <div class="form-group"><label>ACTION (BUY/SELL)</label><input type="text" id="f_action"></div>
           <div class="form-group"><label>LOT</label><input type="text" id="f_lot"></div>
           <div class="form-group"><label>PERCENTAGE GAIN</label><input type="text" id="f_gain"></div>
@@ -445,6 +624,7 @@
       if (cat === 'saham') {
         store.saham.push({
           emiten: document.getElementById('f_emiten').value,
+          price: document.getElementById('f_price').value,
           action: document.getElementById('f_action').value,
           lot: document.getElementById('f_lot').value,
           gain: document.getElementById('f_gain').value,
@@ -470,17 +650,27 @@
         });
       }
 
-      localStorage.setItem('investRecordData', JSON.stringify(store));
+      pushToCloud();
       renderTables();
       closeModal('entryModal');
     }
 
-    // Allow pressing Enter on password field
+    function deleteEntry(category, index) {
+      if (!isAuthenticated) return;
+      if (confirm("Delete this entry?")) {
+        store[category].splice(index, 1);
+        pushToCloud();
+        renderTables();
+      }
+    }
+
+    // Keypress handler for password modal
     document.getElementById('passInput').addEventListener('keyup', (e) => {
       if (e.key === 'Enter') verifyPassword();
     });
 
-    renderTables();
+    // Run initialization
+    initCloudSync();
   </script>
 </body>
 </html>
