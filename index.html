@@ -142,13 +142,15 @@
       font-weight: bold;
     }
 
-    /* Text Wrapping Rules for Reksa Dana & Learning Tables */
+    /* Text Wrapping Rules for Reksa Dana, Holding & Learning Tables */
     #reksa-table,
+    #holding-table,
     #learning-table {
       table-layout: auto;
     }
 
     #reksa-table th, #reksa-table td,
+    #holding-table th, #holding-table td,
     #learning-table th, #learning-table td {
       white-space: normal;
       word-break: break-word;
@@ -244,11 +246,31 @@
           </table>
         </div>
       </div>
+
+      <!-- CURRENT HOLDING STOCKS -->
+      <div class="card">
+        <div class="card-title">Current Holding Stocks</div>
+        <div class="table-container">
+          <table id="holding-table">
+            <thead>
+              <tr>
+                <th style="width: 30px;">No</th>
+                <th>Emiten</th>
+                <th>Lot</th>
+                <th>Avg Buy</th>
+                <th>Cur Price</th>
+                <th>Floating P/L</th>
+              </tr>
+            </thead>
+            <tbody id="holding-body"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    // Hardcoded Data Array - Edit items directly here
+    // Hardcoded Data Array
     const store = {
       saham: [
         { emiten: "BBCA", price: "8,300", action: "L.BUY", lot: "9", gain: "", broker: "MIRAE ASSET", date: "2025-08-04" },
@@ -283,8 +305,13 @@
         { emiten: "MITI", price: "290", action: "L.SELL", lot: "210", gain: "26.35%", broker: "MIRAE ASSET", date: "2026-09-14" }
       ],
       reksa: [
-        { nama: "Insight Money", jenis: "RDPU", ket: "Pelarian MSCI #1 Medium-Long Term" },
+        { nama: "Insigh Money", jenis: "RDPU", ket: "Pelarian MSCI #1 Medium-Long Term" },
         { nama: "Danamas Stabil", jenis: "RDPT", ket: "Pelarian MSCI #2 Medium-Long Term" }
+      ],
+      holdings: [
+        { emiten: "BBCA", lot: "13", avgBuy: "8,238", currentPrice: "6,350", floatingPL: "-22.9%" },
+        { emiten: "BMRI", lot: "14", avgBuy: "4,579", currentPrice: "4,350", floatingPL: "-5.0%" },
+        { emiten: "BUMI", lot: "103", avgBuy: "240", currentPrice: "202", floatingPL: "-16.67%" }
       ],
       foreign: [
         { emiten: "SP500", profit: "Data Lost", gain: "Data Lost", date: "Data Lost" },
@@ -311,6 +338,7 @@
     }
 
     function renderTables() {
+      // Saham Table
       document.getElementById('saham-body').innerHTML = store.saham.map((item, i) => `
         <tr>
           <td>${i + 1}</td>
@@ -324,6 +352,7 @@
         </tr>
       `).join('');
 
+      // Reksa Dana Table
       document.getElementById('reksa-body').innerHTML = store.reksa.map((item, i) => `
         <tr>
           <td>${i + 1}</td>
@@ -333,6 +362,19 @@
         </tr>
       `).join('');
 
+      // Current Holdings Table
+      document.getElementById('holding-body').innerHTML = store.holdings.map((item, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${item.emiten || ''}</td>
+          <td>${item.lot || ''}</td>
+          <td>${item.avgBuy || ''}</td>
+          <td>${item.currentPrice || ''}</td>
+          <td>${formatGainCell(item.floatingPL)}</td>
+        </tr>
+      `).join('');
+
+      // Foreign & Crypto Table
       document.getElementById('foreign-body').innerHTML = store.foreign.map((item, i) => `
         <tr>
           <td>${i + 1}</td>
@@ -343,6 +385,7 @@
         </tr>
       `).join('');
 
+      // Paper Trading / Learning Table
       document.getElementById('learning-body').innerHTML = store.learning.map((item, i) => `
         <tr>
           <td>${i + 1}</td>
